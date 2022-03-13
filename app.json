@@ -1,36 +1,86 @@
 {
-	"name": "Twelve-Factor WordPress",
-	"description": "WordPress, fully managed using Composer and configured using environment variables.",
-	"keywords": [
-		"php",
-		"wordpress",
-		"blog",
-		"cms"
-	],
-	"website": "https://github.com/dzuelke/wordpress-12factor",
-	"repository": "https://github.com/dzuelke/wordpress-12factor",
-	"logo": "https://s.w.org/about/images/logos/wordpress-logo-notext-rgb.png",
-	"success_url": "/",
-	"scripts": {
-		"postdeploy": "composer wordpress-setup-core-install -- --title='WordPress on Heroku' --admin_user=\"$WORDPRESS_ADMIN_USER\" --admin_password=\"$WORDPRESS_ADMIN_PASSWORD\" --admin_email=\"$WORDPRESS_ADMIN_EMAIL\" --url='http://example.herokuapp.com/' && composer wordpress-setup-finalize && composer wordpress-setup-demo-theme && composer wordpress-setup-welcome-post"
+  "name": "WordPress",
+  "description": "WordPress is open source software you can use to create a beautiful website, blog, or app.",
+  "keywords": [
+	"wordpress",
+	"cms",
+	"bedrock",
+	"boilerplate",
+	"composer"
+  ],
+  "website": "https://wordpress.org/",
+  "repository": "https://github.com/PhilippHeuer/wordpress-heroku",
+  "success_url": "/wp/wp-admin",
+  "scripts": {
+	"postdeploy": [
+	  "bin/scripts/postdeploy.sh"
+	]
+  },
+  "stack": "heroku-18",
+  "env": {
+	"AUTH_KEY": {
+	  "description": "A secret key to increase security of stored information.",
+	  "generator": "secret"
 	},
-	"env": {
-		"WORDPRESS_ADMIN_EMAIL":      { "description": "WordPress Administrator E-Mail" },
-		"WORDPRESS_ADMIN_USER":       { "description": "WordPress Administrator Username", "value": "admin" },
-		"WORDPRESS_ADMIN_PASSWORD":   { "description": "WordPress Administrator Password" },
-		"WORDPRESS_AUTH_KEY":         { "generator": "secret", "description": "security token generated for WordPress" },
-		"WORDPRESS_SECURE_AUTH_KEY":  { "generator": "secret", "description": "security token generated for WordPress" },
-		"WORDPRESS_LOGGED_IN_KEY":    { "generator": "secret", "description": "security token generated for WordPress" },
-		"WORDPRESS_NONCE_KEY":        { "generator": "secret", "description": "security token generated for WordPress" },
-		"WORDPRESS_AUTH_SALT":        { "generator": "secret", "description": "security token generated for WordPress" },
-		"WORDPRESS_SECURE_AUTH_SALT": { "generator": "secret", "description": "security token generated for WordPress" },
-		"WORDPRESS_LOGGED_IN_SALT":   { "generator": "secret", "description": "security token generated for WordPress" },
-		"WORDPRESS_NONCE_SALT":       { "generator": "secret", "description": "security token generated for WordPress" }
+	"SECURE_AUTH_KEY": {
+	  "description": "A secret key to increase security of stored information.",
+	  "generator": "secret"
 	},
-	"addons": [
-		"jawsdb",
-		"bucketeer",
-		"sendgrid"
-	],
-	"image": "heroku/php"
+	"LOGGED_IN_KEY": {
+	  "description": "A secret key to increase security of stored information.",
+	  "generator": "secret"
+	},
+	"NONCE_KEY": {
+	  "description": "A secret key to increase security of stored information.",
+	  "generator": "secret"
+	},
+	"AUTH_SALT": {
+	  "description": "A secret key to increase security of stored information.",
+	  "generator": "secret"
+	},
+	"SECURE_AUTH_SALT": {
+	  "description": "A secret key to increase security of stored information.",
+	  "generator": "secret"
+	},
+	"LOGGED_IN_SALT": {
+	  "description": "A secret key to increase security of stored information.",
+	  "generator": "secret"
+	},
+	"NONCE_SALT": {
+	  "description": "A secret key to increase security of stored information.",
+	  "generator": "secret"
+	},
+	"HEROKU_APP_NAME": {
+	  "required": false,
+	  "description": "Only for automated deploys, please don't enter anything!"
+	}
+  },
+  "formation": {
+	"web": {
+	  "quantity": 1,
+	  "size": "free"
+	}
+  },
+  "addons": [
+	{
+	  "plan": "jawsdb-maria:kitefin"
+	},
+	{
+	  "plan": "sendgrid:starter"
+	},
+	{
+	  "plan": "scheduler:standard"
+	},
+	{
+	  "plan": "heroku-redis:hobby-dev"
+	},
+	{
+	  "plan": "papertrail:choklad"
+	}
+  ],
+  "buildpacks": [
+	{
+	  "url": "https://github.com/heroku/heroku-buildpack-php"
+	}
+  ]
 }

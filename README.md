@@ -1,232 +1,57 @@
-# Twelve-Factor WordPress
+# [WordPress](https://wordpress.org/) on [Heroku](http://heroku.com)
 
-WordPress, the [Twelve-Factor](http://12factor.net/) way: fully managed using Composer and configured using environment variables.
+Project Information:
 
-## General Concepts and Considerations
+[![Build Status](https://travis-ci.org/PhilippHeuer/wordpress-heroku.svg?branch=master)](https://travis-ci.org/PhilippHeuer/wordpress-heroku)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/ea24e1ba7dbf4845b94ddb23929b0fd1)](https://www.codacy.com/app/PhilippHeuer/wordpress-heroku?utm_source=github.com&utm_medium=referral&utm_content=PhilippHeuer/wordpress-heroku&utm_campaign=badger)
+[![Dependency Status](https://www.versioneye.com/user/projects/588d26251618a700318eb016/badge.svg?style=flat-square)](https://www.versioneye.com/user/projects/588d26251618a700318eb016)
+[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/PhilippHeuer/wordpress-heroku.svg)](http://isitmaintained.com/project/PhilippHeuer/wordpress-heroku "Average time to resolve an issue")
+[![Percentage of issues still open](http://isitmaintained.com/badge/open/PhilippHeuer/wordpress-heroku.svg)](http://isitmaintained.com/project/PhilippHeuer/wordpress-heroku "Percentage of issues still open")
 
-The WordPress installation is fully contained in top-level `wordpress` and `wp-content` directories upon `composer install`. A `wp-config.php` resides in the root of the project, and uses several different environment variables to control behavior.
+Support:
 
-Locally bundled custom themes and plugins from top-level `themes` and `plugins` directories can be referenced for inclusion via `composer.json` and will be linked into `wp-content`.
+[![Join the chat at https://gitter.im/wordpress-heroku/Lobby](https://badges.gitter.im/wordpress-heroku/Lobby.svg)](https://gitter.im/wordpress-heroku/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-Automatic updates for WordPress or plugins, and theme editing, are disabled intentionally. What you deploy is what gets executed, which makes setups simple to deploy, and, most importantly, reproducible. See further below for information on how to update WordPress versions.
+--------
 
-[WP-CLI](http://wp-cli.org) is used for easier (or automated) handling of tasks such as enabling plugins or storing configuration options. After a deploy, a set of pre-configured [Composer scripts](https://getcomposer.org/doc/articles/scripts.md) can run several administrative functions using WP-CLI, such as initially configuring the blog, and enabling plugins (this happens either automatically when using a Heroku button deploy, or manually). This means that the installation of plugins and their configuration can be part of your version controlled code, so you can easily re-create a blog installation without any manual steps that need separate documentation.
+## About:
+This project is a template for installing and running [WordPress](http://wordpress.org/) on [Heroku](http://www.heroku.com/).
 
-The configuration file is kept as generic as possible; on Heroku, add-ons [JawsDB](https://elements.heroku.com/addons/jawsdb) (for MySQL), [Bucketeer](https://elements.heroku.com/addons/bucketeer) (for S3 storage), and [SendGrid](https://elements.heroku.com/addons/sendgrid) (for E-Mails) are used.
+It is based on [Bedrock](https://roots.io/bedrock/), a modern WordPress stack that helps you to get started with the best development tools and a modern project structure.
 
-The assumption is that this installation runs behind a load balancer whose `X-Forwarded-Proto` header value can be trusted; it is used to determine whether the request protocol is HTTPS or not.
+All resources used in this project are free-of-charge. You can upgrade them post-deployment.
 
-HTTPS is forced for Login and Admin functions. `WP_DEBUG` is on; errors do not get displayed, but should get logged to PHP's default error log, accessible e.g. using `heroku logs`.
+## Table of Contents
+- [Getting Started](#gettingstarted)
+- [Features](#features)
+- [WIKI](https://github.com/PhilippHeuer/wordpress-heroku/wiki)
+- [Changelog](./CHANGELOG.md)
 
-## Quick Deploy
+## Getting Started
+#### Method 1: One-Click-Deployment (suggested for evaluation)
 
-If you have a [Heroku](http://heroku.com) account, you may simply use the following button to deploy this application:
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 
-[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
+Using this button you can deploy a new instance of WordPress.
 
-After the deploy, in [Heroku's Dashboard](https://dasboard.heroku.com) under "Settings" for your deployed application, **remove the `WORDPRESS_ADMIN_*` environment variables**.
+All required extensions (MySQL DB) will be deployed automatically.
+This also works if you fork your own project to work on your site.
 
-To set up WordPress' Cron Jobs using [Heroku Scheduler](https://elements.heroku.com/addons/scheduler), see further below.
+#### Method 2: Deploy using Heroku CLI (suggested for customization)
+Plase check out the [deployment page](https://github.com/PhilippHeuer/wordpress-heroku/wiki/Deployment) in the wiki for a step-by-step guide.
 
-## Manual Deploy
+## Features
+ - [x] Better folder structure
+ - [x] Dependency management with [Composer](http://getcomposer.org)
+ - [x] Easy WordPress configuration with environment variables from Heroku
+ - [x] Autoloader for mu-plugins (use regular plugins as mu-plugins)
+ - [x] Enhanced security (separated web root and secure passwords with [wp-password-bcrypt](https://github.com/roots/wp-password-bcrypt))
 
-### Clone
+## Problems?
 
-Clone this repo (we're naming the Git remote "`upstream`" since you'll likely want to have "`origin`" be your actual site - you can [sync](https://help.github.com/articles/syncing-a-fork) changes from this repository later):
+If you have problems using your instance of WordPress, you should check the [official documentation](https://codex.wordpress.org/).
+If you discover an issue with the deployment process provided by *this repository*, then [open an issue here](https://github.com/PhilippHeuer/wordpress-heroku/issues/new).
 
-```
-$ git clone -o upstream https://github.com/dzuelke/wordpress-12factor
-$ cd wordpress-12factor
-```
+## License
 
-If you like, you can locally install dependencies with [Composer](https://getcomposer.org):
-
-```
-$ composer install
-```
-
-### Create Application and Add-Ons
-
-Create a new app and add add-ons for MySQL, S3 and E-Mail:
-
-```
-$ heroku create
-$ heroku addons:create jawsdb
-$ heroku addons:create bucketeer
-$ heroku addons:create sendgrid
-```
-
-### Set WordPress Keys and Salts
-
-This will use the WordPress secret keys service, parse out the values, and set them as [config vars](https://devcenter.heroku.com/articles/config-vars):
-
-```
-$ heroku config:set $(curl 'https://api.wordpress.org/secret-key/1.1/salt/' | sed -E -e "s/^define\('(.+)', *'(.+)'\);$/WORDPRESS_\1=\2/" -e 's/ //g')
-```
-
-You can also generate your own key and set all required variables yourself (see section further below).
-
-### Deploy
-
-```
-$ git push heroku master
-```
-
-### Finalize Installation
-
-This will create tables and set up an admin user:
-
-```
-$ heroku run 'composer wordpress-setup-core-install -- --title="WordPress on Heroku" --admin_user=admin --admin_password=admin --admin_email=admin@example.com --url="http://example.herokuapp.com/"'
-```
-
-If you'd like to interactively provide info instead (use a format like "`http://example.herokuapp.com`" with your app name for the URL), you can run:
-
-```
-$ heroku run 'vendor/bin/wp core install --prompt'
-```
-
-Finally, the following command will configure and enable plugins and set a reasonable structure for Permalinks:
-
-```
-$ heroku run 'composer wordpress-setup-finalize'
-```
-
-### Visit Blog
-
-Navigate to the application's URL, or open your browser the lazy way:
-
-```
-$ heroku open
-```
-
-## Installing a new Plugin or Theme
-
-1. Search for your plugin or theme on [WordPress Packagist](http://wpackagist.org);
-1. Click the latest version and check the version selector string in the text box that appears - it will look like `"wpackagist-theme/hueman": "1.5.7"` or `"wpackagist-plugin/akismet": "3.1.7"`;
-1. You don't want such an exact version, but instead a more lenient selector like (in the case above) `^1.5.7` or at least `~1.5.7` (see the [Composer docs](https://getcomposer.org/doc/articles/versions.md#next-significant-release-operators) for details);
-1. Run `composer require wpackagist-$type/name:^$version`, for example:
-
-    ```
-    composer require wpackagist-plugin/akismet:^3.1.7
-    ```
-    
-    or
-    
-    ```
-    composer require wpackagist-plugin/hueman:^1.5.7
-    ```
-
-1. Run `git add composer.json composer.lock` and `git commit`;
-1. `git push heroku master`
-
-### Activating a Plugin or Theme once
-
-Run `heroku run 'vendor/bin/wp plugin activate` or `vendor/bin/wp theme activate` and pass the name of the plugin or theme (e.g. `wp theme activate hueman`).
-
-However, if you're working on an actual project, you will also want to ensure that this step can be run as part of the installation - see the next section for info.
-
-### Activating a Plugin or Theme, the repeatable way
-
-See the `scripts` section in `composer.json` for inspiration. A [Composer script](https://getcomposer.org/doc/articles/scripts.md) named `wordpress-setup-enable-plugins` (which gets in turn called by another script) enables three plugins by default using WP-CLI's `wp` command, and you can just add yours to the list. You'll notice that a separate step before also configures one of the plugins; you can do the same for your customizations.
-
-After you adjusted the scripts section, run `composer update --lock`, then `git add composer.json composer.lock`, and `git commit` the changes.
-
-## Bundling a Custom Theme or Plugin
-
-It's likely you'll want to have a custom theme for your project, or use plugin code to customize the behavior of WordPress.
-
-If you repeatedly use these same customizations across multiple projects, you should put them into their own (private or public) GitHub repository and reference them in the same way as explained above.
-
-However, if the customizations you've made are specific to one project, then you should bundle them with the project code and pull them in as if they were an external theme or plugin.
-
-You can put custom themes into the `themes/` directory under the project root. Give each theme its own directory and include a custom repository at the top of your `composer.json`, in the `repositories` section:
-
-```
-{
-	"type": "path",
-	"url": "themes/*/"
-}
-```
-
-Each folder under `themes/` is just a regular WordPress theme, except with a `composer.json` similar to the following:
-
-```
-{
-	"type": "wordpress-theme",
-	"name": "yourgithubname/yourthemename",
-	"version": "1.0.0",
-	"require": {
-		"composer/installers": "~1.0"
-	}
-}
-```
-
-The `wordpress-theme` type will cause the correct installation of your theme (see `extra`/`installer-paths` in `composer.json`).
-
-The same technique can be used for plugins; simply adjust the directory name and `repositories` entry, and use `wordpress-plugin` as the type in each plugin's `composer.json`.
-
-Whenever you run `composer install` locally, the theme simply gets symlinked into the correct WordPress directory. That means any changes you make to the theme in the `themes/` directory will immediately be applied to your running site.
-
-## Updating WordPress and Plugins
-
-To update all dependencies:
-
-```
-$ composer update
-```
-
-Alternatively, run `composer update johnpbloch/wordpress` to only update WordPress, or e.g. `composer update wpackagist-plugin/sendgrid-email-delivery-simplified` to only update that plugin.
-
-Afterwards, add, commit and push the changes:
-
-```
-$ git add composer.json composer.lock
-$ git commit -m "new WordPress and Plugins"
-$ git push heroku master
-```
-
-## Web Servers
-
-This project runs Apache by default, using the `apache2-wordpress.conf` [configuration include](/articles/custom-php-settings#web-server-settings) and with the `wordpress/` directory [defined as the document root](/articles/deploying-php#configuring-the-document-root).
-
-To use Nginx instead, [change](/articles/deploying-php#selecting-a-web-server) `Procfile` to the following:
-
-```
-web: vendor/bin/heroku-php-nginx -C nginx-wordpress.conf.php wordpress/
-```
-
-## WordPress Cron
-
-Instead of having WordPress check on each page load if Cron Jobs need to be run (thus potentially slowing down the site for some users), you can invoke Cron externally:
-
-1. Run `heroku config:set DISABLE_WP_CRON=true` (or set it using the [Heroku Dashboard](https://dasboard.heroku.com)) to disable built-in cron jobs;
-1. Add [Heroku Scheduler](https://elements.heroku.com/addons/scheduler) to your application;
-1. Add a job that, every 30 minutes, runs `vendor/bin/wp cron event run --all`.
-
-## Environment Variables
-
-`wp-config.php` will use the following environment variables (if multiple are listed, in order of precedence):
-
-### Database Connection
-
-`DATABASE_URL` or `JAWSDB_URL` or `CLEARDB_DATABASE_URL` (format `mysql://user:pass@host:port/dbname`) for database connections.
-
-### AWS/S3
-
-* `AWS_ACCESS_KEY_ID` or `BUCKETEER_AWS_ACCESS_KEY_ID` for the AWS Access Key ID;
-* `AWS_SECRET_ACCESS_KEY` `BUCKETEER_AWS_SECRET_ACCESS_KEY` for the AWS Secret Access Key;
-* `S3_BUCKET` or `BUCKETEER_BUCKET_NAME` for the name of the S3 bucket;
-* `S3_REGION` for a non-default S3 region name.
-
-### SendGrid
-
-`SENDGRID_USERNAME` and `SENDGRID_PASSWORD` for SendGrind credentials.
-
-### WordPress Secrets
-
-`WORDPRESS_AUTH_KEY`, `WORDPRESS_SECURE_AUTH_KEY`, `WORDPRESS_LOGGED_IN_KEY`, `WORDPRESS_NONCE_KEY`, `WORDPRESS_AUTH_SALT`, `WORDPRESS_SECURE_AUTH_SALT`, `WORDPRESS_LOGGED_IN_SALT`, `WORDPRESS_NONCE_SALT` should contain random secret keys for various WordPress functions; values can be obtained from https://api.wordpress.org/secret-key/1.1/salt/ (also see Manual Deploy instructions further above).
-
-### Miscellaneous
-
-`DISABLE_WP_CRON` set to "1" or "true" will disable automatic cron execution through browsers (see further above).
+Released under the [MIT license](./LICENSE).
